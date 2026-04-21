@@ -1,0 +1,21 @@
+# MetalLB IP address pool for Kind + Docker Desktop on macOS.
+# NOTE: scripts/01-setup-cluster.sh auto-detects the Docker 'kind' bridge
+# subnet and applies the pool dynamically. This file serves as a static
+# fallback/reference using the most common Kind subnet on Docker Desktop.
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: kind-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 172.18.255.200-172.18.255.250
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: kind-l2
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - kind-pool

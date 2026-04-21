@@ -1,0 +1,13 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-reviews-v2-l7
+  namespace: bookinfo-ambient-l7
+spec:
+  selector:
+    matchLabels:
+      app: reviews
+      version: v2
+  action: DENY
+  rules:
+  - {} # Pas de condition = on bloque tout ce qui match le selector (v2)

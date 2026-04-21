@@ -1,0 +1,11 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  profile: ambient
+  components:
+    ztunnel:
+      enabled: false   # ztunnel is enabled explicitly in 03-deploy-ambient.sh
+  values:
+    cni:
+      cniBinDir: /opt/cni/bin
+      cniConfDir: /etc/cni/net.d

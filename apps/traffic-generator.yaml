@@ -1,0 +1,47 @@
+# Namespace — ambient so ztunnel intercepts traffic and Kiali shows it
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traffic-generator
+---
+# Continuous curl loop hitting all 4 productpage services.
+# Pacing is provided by --connect-timeout 1 --max-time 2 per request
+# (4 namespaces × up to 2 s max-time = up to 8 s per round).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: curl-product
+  namespace: traffic-generator
+  labels:
+    app: curl-product
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: curl-product
+  template:
+    metadata:
+      labels:
+        app: curl-product
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl:8.11.0
+        command: ["sh", "-c"]
+        args:
+        - |
+          while true; do
+            for ns in bookinfo-nomesh bookinfo-sidecar bookinfo-ambient-l4 bookinfo-ambient-l7; do
+              curl -s -o /dev/null \
+                --connect-timeout 1 --max-time 2 \
+                -w "{\"ns\":\"${ns}\",\"status\":%{http_code},\"ms\":%{time_total_ms}}\n" \
+                "http://productpage.${ns}.svc.cluster.local:9080/productpage" || true
+            done
+          done
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "16Mi"
+          limits:
+            cpu: "50m"
+            memory: "32Mi"

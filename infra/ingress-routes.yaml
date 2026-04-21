@@ -1,0 +1,135 @@
+# ── HTTPRoute: static assets ─────────────────────────────────────────────────
+# /static/* → productpage.bookinfo-nomesh:9080 (no rewrite — path is correct)
+# All 4 namespaces serve identical static files; nomesh is the simplest backend.
+# This handles absolute asset paths (/static/bootstrap/img/izzy.png, etc.)
+# embedded in the HTML returned after prefix-rewriting.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bookinfo-static
+  namespace: bookinfo-nomesh
+spec:
+  parentRefs:
+  - name: bookinfo-gateway
+    namespace: istio-system
+    sectionName: http
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /static/
+    backendRefs:
+    - name: productpage
+      port: 9080
+---
+# ── HTTPRoute: bookinfo-nomesh ────────────────────────────────────────────────
+# /nomesh/* → productpage.bookinfo-nomesh:9080
+# Path prefix is stripped: /nomesh/productpage → /productpage
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bookinfo-nomesh
+  namespace: bookinfo-nomesh
+spec:
+  parentRefs:
+  - name: bookinfo-gateway
+    namespace: istio-system
+    sectionName: http
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /nomesh/
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: productpage
+      port: 9080
+---
+# ── HTTPRoute: bookinfo-sidecar ───────────────────────────────────────────────
+# /sidecar/* → productpage.bookinfo-sidecar:9080
+# Path prefix is stripped: /sidecar/productpage → /productpage
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bookinfo-sidecar
+  namespace: bookinfo-sidecar
+spec:
+  parentRefs:
+  - name: bookinfo-gateway
+    namespace: istio-system
+    sectionName: http
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /sidecar/
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: productpage
+      port: 9080
+---
+# ── HTTPRoute: bookinfo-ambient-l4 ────────────────────────────────────────────
+# /l4/* → productpage.bookinfo-ambient-l4:9080
+# Path prefix is stripped: /l4/productpage → /productpage
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bookinfo-ambient-l4
+  namespace: bookinfo-ambient-l4
+spec:
+  parentRefs:
+  - name: bookinfo-gateway
+    namespace: istio-system
+    sectionName: http
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /l4/
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: productpage
+      port: 9080
+---
+# ── HTTPRoute: bookinfo-ambient-l7 ────────────────────────────────────────────
+# /l7/* → productpage.bookinfo-ambient-l7:9080
+# Path prefix is stripped: /l7/productpage → /productpage
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bookinfo-ambient-l7
+  namespace: bookinfo-ambient-l7
+spec:
+  parentRefs:
+  - name: bookinfo-gateway
+    namespace: istio-system
+    sectionName: http
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /l7/
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: productpage
+      port: 9080
