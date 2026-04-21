@@ -1,0 +1,31 @@
+# curl-details pod for L7 policy testing in bookinfo-ambient-l7
+# Curls the details service through the waypoint proxy.
+# When the L7 deny policy is applied, all requests to details return 403.
+# Deploy manually:  kubectl apply -f apps/curl-details-l7.yaml
+# Watch logs:       kubectl logs -f curl-details -n bookinfo-ambient-l7
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-details
+  namespace: bookinfo-ambient-l7
+spec:
+  restartPolicy: Never
+  containers:
+  - name: curl
+    image: curlimages/curl:8.11.0
+    command: ["sh", "-c"]
+    args:
+    - |
+      while true; do
+        curl -s -o /dev/null --connect-timeout 1 --max-time 2 \
+          -w "Status: %{http_code} | Timestamp: $(date +%H:%M:%S)\n" \
+          http://details.bookinfo-ambient-l7.svc.cluster.local:9080/details/1
+        sleep 0.6
+      done
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "16Mi"
+      limits:
+        cpu: "50m"
+        memory: "32Mi"

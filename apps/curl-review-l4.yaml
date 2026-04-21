@@ -1,0 +1,30 @@
+# curl-review pod for L4 policy testing in bookinfo-ambient-l4
+# Uses the default SA (not in the L4 whitelist) to verify ztunnel blocks traffic.
+# Deploy manually:  kubectl apply -f apps/curl-review-l4.yaml
+# Watch logs:       kubectl logs -f curl-review -n bookinfo-ambient-l4
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-review
+  namespace: bookinfo-ambient-l4
+spec:
+  restartPolicy: Never
+  containers:
+  - name: curl
+    image: curlimages/curl:8.11.0
+    command: ["sh", "-c"]
+    args:
+    - |
+      while true; do
+        curl -s -o /dev/null --connect-timeout 1 --max-time 2 \
+          -w "Status: %{http_code} | Timestamp: $(date +%H:%M:%S)\n" \
+          http://reviews.bookinfo-ambient-l4.svc.cluster.local:9080/reviews/1
+        sleep 1
+      done
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "16Mi"
+      limits:
+        cpu: "50m"
+        memory: "32Mi"

@@ -4,7 +4,7 @@
 ### Prerequisites
 
 - `kind`, `kubectl`, `istioctl`, `docker` installed and in `$PATH`
-- Docker Desktop running
+- Docker Desktop running with kind cluster 3 nodes
 
 ---
 
@@ -61,41 +61,56 @@ Deploys `bookinfo-ambient-l4` (ztunnel only) and `bookinfo-ambient-l7` (ztunnel 
 
 ---
 
-### Step 5 — Demo L4 & L7 AuthorizationPolicy
+### Step 5 — L4: Whitelist only productpage SA (ztunnel enforcement)
 
-Deploying `curl-review` that directly targets bookinfo reviews
-```bash
-kubectl run curl-review -n bookinfo-ambient-l7 --image=curlimages/curl -- /bin/sh -c \
-"while true; do curl -s -o /dev/null --connect-timeout 1 --max-time 2 -w \"Status: %{http_code} | Timestamp: \$(date +%H:%M:%S)\n\" http://reviews.bookinfo-ambient-l7.svc.cluster.local:9080/reviews/1; sleep 0.5; done"
-
-kubectl logs -f curl-review -n bookinfo-ambient-l7
-```
-
-First ap deployes : deny at l4 reviews-v2 (black stars)
+Deploy a `curl-review` pod in `bookinfo-ambient-l4` (uses the `default` SA, which is **not** in the whitelist):
 
 ```bash
-kubectl apply -f policies/l7-deny-reviewsv2.yaml
+kubectl apply -f apps/curl-review-l4.yaml
+kubectl logs -f curl-review -n bookinfo-ambient-l4
 ```
 
----
-
-#### Step 6 — L7: Whitelist only productpage SA at the Waypoint
+You should see `Status: 200` lines. Now apply the L4 whitelist policy:
 
 ```bash
 kubectl apply -f policies/l4-whitelist-reviews.yaml
 ```
 
+Only the `bookinfo-productpage` SA is allowed to reach reviews. Since `curl-review` runs as `default`, ztunnel blocks it at L4 — logs switch to `Status: 503`.
+
+> **Automated test:** `bash scripts/04-apply-l4-policy.sh` deploys curl-review, applies the policy, and asserts 503 in logs.
+
+---
+
+### Step 6 — L7: Deny all traffic to the details Service (waypoint enforcement)
+
+Deploy a `curl-details` pod in `bookinfo-ambient-l7` (targets the `details` Service):
+
+```bash
+kubectl apply -f apps/curl-details-l7.yaml
+kubectl logs -f curl-details -n bookinfo-ambient-l7
+```
+
+You should see `Status: 200` lines. Now apply the L7 deny policy:
+
+```bash
+kubectl apply -f policies/l7-deny-details.yaml
+```
+
+The policy uses `targetRefs` to bind to the `details` Service. Traffic to `details` is routed through the `reviews-waypoint` and denied at L7. Logs switch to `Status: 403`.
+
+> **Automated test:** `bash scripts/05-apply-l7-policy.sh` deploys curl-details, applies the policy, and asserts 403 in logs.
+
+---
 
 #### Cleanup
 
 ```bash
-kubectl delete -f policies/l4-whitelist-reviews.yaml
-kubectl delete -f policies/l7-deny-reviewsv2.yaml
+# Remove L4 policy + curl-review
+bash scripts/04-apply-l4-policy.sh --remove
 
-# Graceful cleanup with checks
-bash scripts/05-demo-l7-policy.sh --remove
-bash scripts/04-demo-l4-policy.sh --remove 
-
+# Remove L7 policy + curl-review
+bash scripts/05-apply-l7-policy.sh --remove
 ```
 
 ---

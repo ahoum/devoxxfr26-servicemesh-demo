@@ -1,0 +1,13 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-details-l7
+  namespace: bookinfo-ambient-l7
+spec:
+  targetRefs:
+  - kind: Service
+    group: ""
+    name: details
+  action: DENY
+  rules:
+  - {} # Deny all traffic to the details Service (L7 via waypoint)

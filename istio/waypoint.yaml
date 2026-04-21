@@ -20,7 +20,7 @@ metadata:
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: reviews-waypoint
+  name: details-waypoint
   namespace: bookinfo-ambient-l7
   labels:
     istio.io/waypoint-for: service
@@ -81,6 +81,7 @@ metadata:
   labels:
     app: details
     service: details
+    istio.io/use-waypoint: details-waypoint
 spec:
   ports:
   - port: 9080
@@ -104,7 +105,7 @@ spec:
     app: ratings
 ---
 # The reviews Service is annotated with istio.io/use-waypoint so that ztunnel
-# routes all traffic destined for reviews through the reviews-waypoint for L7
+# routes all traffic destined for reviews through the details-waypoint for L7
 # processing. productpage, details, and ratings are NOT routed via the waypoint.
 apiVersion: v1
 kind: Service
@@ -114,7 +115,6 @@ metadata:
   labels:
     app: reviews
     service: reviews
-    istio.io/use-waypoint: reviews-waypoint
 spec:
   ports:
   - port: 9080

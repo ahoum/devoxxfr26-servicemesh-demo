@@ -2,7 +2,7 @@ apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
   name: whitelist-reviews-l4
-  namespace: bookinfo-ambient-l7
+  namespace: bookinfo-ambient-l4
 spec:
   selector:
     matchLabels:
@@ -11,4 +11,4 @@ spec:
   rules:
   - from:
     - source:
-        principals: ["cluster.local/ns/bookinfo-ambient-l7/sa/bookinfo-productpage"]
+        principals: ["cluster.local/ns/bookinfo-ambient-l4/sa/bookinfo-productpage"]
